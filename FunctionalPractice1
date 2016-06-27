@@ -10,6 +10,12 @@ function forEach(array, callback){
   }
 }
 
+//callback is passing in the item, the index of the item, and the entire array
+//callback will modify the original array and not a copy of it
+//but forEach will return original unmodified
+//nothing is returned -- note in example, need an extra "total" to get anything
+//to return
+
 //also works:
 //function forEach(array, callback){
 //    var v = 0;
@@ -23,7 +29,11 @@ function forEach(array, callback){
 // ---
 var total = 1
 forEach([1, 2, 3, 4], function(a){ total *= a; })
+//first time through, a=1, second time through, a=2, etc.
 console.assert(total === 24)
+
+//built-in function .forEach :  [1,2,3,4].forEach (function a {total *=a;})});
+//have to have var total = 1 before previous line to get it to execute
 
 // ----------------------------
 // using forEach() from above, write your own reduce()
@@ -32,7 +42,9 @@ console.assert(total === 24)
 //forEach() executes the provided callback once for each element present in the array in ascending order.
 // ----------------------------
 
-
+//reduce takes many items and returns one
+//function not called the first time through; just set the accumulator to initial value
+//callback runs one less time than the number of array items
 
 function reduce(array, callback){
     var accumulator ;  //undefined
@@ -62,11 +74,33 @@ function reduce(array, callback){
   return accumulator;
 }
 
+//Jim's
+function reduce(array, callback){
+  var accumulator;
+  forEach(array, function(value, i, callbackArray) {
+    // If it is our first time through, use the first value
+    if(i === 0) {
+      accumulator = value;
+    }
+    // Otherwise,
+    else if (i < array.length) {
+//do not run callback function for undefined array elements
+      if (typeof value !== 'undefined') {
+      var cbresult = callback (accumulator, value);
+        if (typeof cbresult !==  'undefined') {
+        }
+        accumulator = cbresult;
+      }
+    }
+  });
+  return accumulator;
+}
 
 // tests
 // ---
 console.assert(reduce([1, 2, 3, 4], function(a, v){ return a*v ;}) === 24);
-
+//first item in function (a, v) is the accumulator,
+//the second item v is the value passed in
 // ----------------------------
 // using forEach() from above, write your own map()
 // that takes an array and a function
@@ -80,6 +114,24 @@ forEach (array, function (array, i) {
   return returnArray;
 }
 
+//Jim's code
+function map(array, callback){
+var returnArray = [];
+forEach (array, function (item, i) {
+//remember, the callback function in forEach takes 3 items, the first is the item,
+//the second is the index, and the third is the array (but third item not
+//necessary in this case), but it could be forEach (array, function(item, i, array))
+  returnArray[i]= callback(item); }
+);
+  return returnArray;
+}
+
+//loops through all the items in the array, and applies the callback
+//to each and every item
+//different from .forEach in that the original array is modified
+//original value replaced with new value
+//returns a modified array
+
 // tests
 // ---
 var squares = map([1, 2, 3, 4], function(v){ return v*v ;});
@@ -92,13 +144,16 @@ console.assert(squares[3] === 16);
 // using reduce() from above, write your own filter()
 // that takes an array and a function
 // ----------------------------
+//filter returns a new array with only items that pass the test
 
 function filter(array, callback){
 var returnArray = [];
 //a below is to hold the accumulator which always comes first
 //when define function, reduce is running it and needs 2 arguments
 reduce (array, function (a, b) {
+//first time through, a is accumulator, b is the value of the item currently being processed
   var val = callback(b);
+//only add item to new array if condition true
   if (val) {
     returnArray.push(b);
   }
@@ -121,7 +176,21 @@ console.assert(evens[1] === 4);
 // ----------------------------
 
 function sum(){
-    // YOUR CODE HERE
+    var args = (arguments.length === 1 ? [arguments[0]] : Array.apply(null, arguments));
+  var a = 0 ;
+  var sumResult = reduce(args, function(a, b) {
+    return a + b;
+  });
+  return sumResult;
+}
+
+//Jim's
+function sum(){
+  //get all of the arguments as an array
+    var args = (arguments.length === 1 ? [arguments[0]] : Array.apply(null, arguments));
+    return reduce (args, function (a, b) {  //return for sum
+      return a+b;  // return for function
+    })
 }
 
 // tests
@@ -154,9 +223,53 @@ var names = [
     {name:"Jesse", alma_mater:"Univ of Texas - Austin"}
 ]
 
-names.sort(function(a, b){
-    // YOUR CODE HERE
-})
+
+names.sort (function(a, b){
+      var nameA = a.name;
+      var nameB = b.name;
+        if(nameA < nameB){
+            return -1;
+        }else if(nameA > nameB){
+            return 1;
+        }else{
+            return 0;
+        }
+    });
+
+//Jim's code
+
+names.sort (function a,b) {
+  return alphaSort (a.name,b.name)
+});
+//Jim's defined function
+
+function alphaSort(aName, bName){
+          if(aName === bName) {
+            return true;
+          }
+          var aLength = aName.length;
+          // Loop through the characters
+          for(var i=0; i < aLength; i++ ) {
+            var aCode = aName.toLowerCase().charCodeAt(i);
+            var bCode = bName.toLowerCase().charCodeAt(i);
+            var aNaN = isNaN(aCode);
+            var bNaN = isNaN(bCode);
+            // Neither code is defined
+            if(aNaN && bNaN) {
+              return true;
+            } else if (aNaN) {
+              return false;
+            } else if (bNaN) {
+              return true;
+            } else if (aCode > bCode) {
+              return true;
+            } else if (aCode < bCode) {
+              return false;
+            }
+          }
+        }
+
+
 
 // tests
 // ---
@@ -188,14 +301,28 @@ var customers = [
 ]
 
 var results = customers
-    .filter(function(){
-        // YOUR CODE HERE
+    .filter(function(a){
+        if (a.first.charAt(0) === "J") {return true;} else {return false;}
     })
     .map(function(){
-        // YOUR CODE HERE
+        return (a.first + " " + a.last);
     })
-    .sort(function(){
-        // YOUR CODE HERE
+//better to use names.sort above
+    .sort(function(a){
+        return a.sort();
+    });
+
+//Jim's
+
+var results = customers
+    .filter(function(customer){
+        return customer.first.toLowerCase().indexOf('j') === 0;
+    })
+    .map(function(customer){
+        return { fullname: customer.first + ' ' + customer.last };
+    })
+    .sort(function(a, b){
+        return alphaSort(a.fullname, b.fullname);
     })
 
 // tests
